@@ -13,7 +13,7 @@ from PyQt5.QtQml import QQmlComponent, QQmlEngine, QQmlApplicationEngine
 
 loginDetails = 0
 chat_socket = 0
-nickName = ""
+nickName = "random_name"
 receive_que = 0
 socket_receive_thread = 0
 render_incoming_msg_thread = 0

@@ -12,6 +12,7 @@ from socket import AF_INET, socket, SOCK_STREAM, SOCK_DGRAM
 
 xpro = ""
 ysupp = ""
+block_data = []
 
 
 class Block:
@@ -150,7 +151,7 @@ class Blockchain:
 # Endpoint to submit a new transaction. This will be used by
 # our application to add new data (posts) to the blockchain
 def new_transaction(tx_data):
-    required_fields = ["user_name", "text", "time"]
+    required_fields = ["supplierID", "producerID", "user_name", "text", "time"]
     for field in required_fields:
         if not tx_data.get(field):
             return "Invlaid transaction data"
@@ -163,7 +164,10 @@ def new_transaction(tx_data):
 # all the posts to display.
 def get_chain():
     # make sure we've the longest chain
+<<<<<<< HEAD
     #consensus()
+=======
+>>>>>>> Fixed the blockchain part
     chain_data = []
     for block in blockchain[xpro][ysupp].chain:
         chain_data.append(block.__dict__)
@@ -179,16 +183,6 @@ def mine_unconfirmed_transactions():
     if not result:
         return "No transactions to mine"
     return "Block #{} is mined.".format(result)
-
-
-# Endpoint to add new peers to the network.
-def register_new_peers():
-    nodes = request.get_json()
-    if not nodes:
-        return "Invalid data"
-    for node in nodes:
-        peers.add(node)
-    return "Success"
 
 
 # Endpoint to add a block mined by someone else to
@@ -208,33 +202,6 @@ def validate_and_add_block():
     return "Block added to the chain"
 
 
-# Endpoint to query unconfirmed transactions
-def get_pending_tx():
-    return json.dumps(blockchain[xpro][ysupp].unconfirmed_transactions)
-
-
-def consensus():
-    """
-    Our simple consnsus algorithm. If a longer valid chain is
-    found, our chain is replaced with it.
-    """
-    global blockchain
-
-    longest_chain = None
-    current_len = len(blockchain[xpro][ysupp].chain)
-    for node in peers:
-        response = requests.get('http://{}/chain'.format(node))
-        length = response.json()['length']
-        chain = response.json()['chain']
-        if length > current_len and blockchain[xpro][ysupp].check_chain_validity(chain):
-            current_len = length
-            longest_chain = chain
-    if longest_chain:
-        blockchain[xpro][ysupp] = longest_chain
-        return True
-    return False
-
-
 def announce_new_block(block):
     """
     A function to announce to the network once a block has been mined.
@@ -242,12 +209,9 @@ def announce_new_block(block):
     respective chains.
     """
     for peer in peers:
-        url = "http://{}/add_block".format(peer)
-        requests.post(
-            url=url,
-            data=json.dumps(
-                obj=block.__dict__,
-                sort_keys=True))
+        block_data = json.dumps(
+                     obj=block.__dict__,
+                     sort_keys=True)
 
 
 def log(msg):
@@ -328,7 +292,14 @@ def handle_client(client, clients_list_lock):
             ysupp = int(incoming_msg['supplierID'][-1]) - 1
             log(new_transaction(incoming_msg))
             log(mine_unconfirmed_transactions())
-            log(get_chain())
+            get_chain_data = get_chain()
+            log(get_chain_data)
+            get_chain_data = json.loads(get_chain_data)
+            if get_chain_data["length"] > 1:
+                chain_msg_ = 'Block added length: ' + str(get_chain_data["length"]) + '\nText: ' + get_chain_data["chain"][-1]["transactions"][0]["text"]
+                chain_msg = create_server_json_msg(text=chain_msg_)
+                broadcast(chain_msg, clients_list_lock)
+            # client.send(bytes(pickle.dumps(chain_msg)))
             broadcast(incoming_msg, clients_list_lock)
         else:
             log('Client %s:%s has disconnected' % client.getsockname())
@@ -389,7 +360,7 @@ def start_listen():
             pass
 
 
-HOST = ''
+HOST = '127.0.0.1'
 PORT = 33000
 BUFSIZ = 1024
 ADDR = (HOST, PORT)
@@ -397,11 +368,11 @@ SERVER = socket(AF_INET, SOCK_STREAM)
 clients = {}
 addresses = {}
 start_listen()
-local_ip = get_my_ip()
+# local_ip = get_my_ip()
 clients_list_lock = threading.Lock()
 SERVER.listen(50)  # Listens for 50 connections at max.
 atexit.register(close_server, clients_list_lock=clients_list_lock)
-print("Server is listnening on %s" % local_ip)
+print("Server is listnening on %s" % HOST)
 # The node's copy of blockchain
 blockchain = [[Blockchain() for x in range(3)] for y in range(2)]
 # The address to other participating members of the network

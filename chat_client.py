@@ -122,9 +122,9 @@ class IRC(QObject):
         global producerID
         producerID = val
         print("Received: " + val)
-        if val == "p1":
+        if val == "Producer1":
             PORT = 33000
-        elif val == "p2":
+        elif val == "Producer2":
             PORT = 33001
         else:
             PORT = 33003

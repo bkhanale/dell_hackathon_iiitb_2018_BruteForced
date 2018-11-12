@@ -163,7 +163,7 @@ def new_transaction(tx_data):
 # all the posts to display.
 def get_chain():
     # make sure we've the longest chain
-    consensus()
+    #consensus()
     chain_data = []
     for block in blockchain[xpro][ysupp].chain:
         chain_data.append(block.__dict__)
